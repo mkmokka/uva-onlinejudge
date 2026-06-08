@@ -1,36 +1,29 @@
-#include<iostream>
-#include<climits>
-#include<algorithm>
+#include<bits/stdc++.h>
 using namespace std;
 int main()
 {
-    int i,j;
-    while(cin>>i>>j)
+    int a,b,i,j;
+    while(scanf("%d%d",&a,&b)==2 && a>0 && b>0)
     {
-        cout<<i<<" "<<j<<" ";
-        if(i>j)swap(i,j);
-        int max_cycle_len=INT_MIN;
-        for(int nbr=i; nbr<=j; nbr++)
+        int ans,sum=0;
+        cout<<a<<" "<<b<<" ";
+        if(a>b)
+            swap(a,b);
+        //cout<<a<<b<<endl;
+        for(i=a; i<=b; i++)
         {
-            int n=nbr;
-            int cycle_len=1;
-
-                while(n!=1)
-                {
-
-                    if(n%2==1)n=(n*3)+1;
-                    else n=n/2;
-                    cycle_len++;
-                }
-                max_cycle_len=max(max_cycle_len,cycle_len);
-
-
+            ans=1;
+            for(j=i; j!=1; j=j){
+                if(j%2==0)
+                    j/=2;
+                else
+                    j=3*j+1;
+                ans+=1;
             }
-
-            cout<<max_cycle_len<<endl;
+            if(ans>=sum)
+                sum=ans;
         }
-
+        cout<<sum<<endl;
+    }
     return 0;
-
 }
-
