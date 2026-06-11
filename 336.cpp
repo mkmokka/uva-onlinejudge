@@ -1,82 +1,120 @@
-/*
-336 - A Node Too Far
-*/
-#include<bits/stdc++.h>
+#include <cstdio>
+#include <queue>
+#include <map>
+#include <vector>
+#include <utility>
+
 using namespace std;
 
-int main()
+int getId(int val, map<int, int> & mapNodeValToId, int *nextAssignId);
+int findNumReachableByBFS(const vector<vector<int> > & adjList, int startV, int TTL);
+
+int main(void)
 {
-    int node,x,y,n,p,cnt,cas=0;
-    while(scanf("%d",&node)==1)
-    {
-        if(node==0)
-            break;
-        map<int,vector<int> >adj;
-        for(int i=0; i<node; i++)
-        {
-            scanf("%d %d",&x,&y);
-            adj[x].push_back(y);
-            adj[y].push_back(x);
-        }
+	int numE, numV, caseId, valOne, valTwo, idOne, idTwo, TTL, nextAssignId, numReach;
+	map<int, int> mapNodeValToId;
+	vector<vector<int> > adjList;
+	vector<int> emptyList;
+	map<int, int>::const_iterator it;
 
-        while(1)
-        {
-            scanf("%d %d",&n,&p);
-            if(n==0 && p==0)
-            {
-                break;
-            }
-            queue<int>q;
-            map<int, int>level;
-            level[n]=0;
-            q.push(n);
-            int reach=1;
-            while(!q.empty())
-            {
-                int y = q.front();
-                q.pop();
-                for(int i=0; i<adj[y].size(); i++)
-                {
-                    int v = adj[y][i];
-                    if(level.count(v)==0)
-                    {
+	caseId = 1;
+	while(1)
+	{
+		scanf("%d", &numE);
+		if(numE == 0)
+			break;
 
-                        level[v] = level[y]+1;
+		nextAssignId = 0;
+		mapNodeValToId.clear();
+		adjList.clear();
 
-                        if(level[v]<=p)
-                        {
-                            ++reach;
-                            q.push(v);
-                        }
+		// Read input and build graph
+		for(int e = 0; e < numE; e++)
+		{
+			scanf("%d %d", &valOne, &valTwo);
+			idOne = getId(valOne, mapNodeValToId, &nextAssignId);
+			idTwo = getId(valTwo, mapNodeValToId, &nextAssignId);
 
-                    }
-                }
+			if(idOne >= (int) adjList.size())
+				adjList.push_back(emptyList);
+			if(idTwo >= (int) adjList.size())
+				adjList.push_back(emptyList);
+			
+			adjList[idOne].push_back(idTwo);
+			adjList[idTwo].push_back(idOne);
+		}
+		numV = (int) adjList.size();
 
-            }
-            printf("Case %d: %d nodes not reachable from node %d with TTL = %d.\n",++cas,adj.size()-reach,n,p);
+		// Query
+		while(1)
+		{
+			scanf("%d %d", &valOne, &TTL);
+			if(valOne == 0 && TTL == 0)
+				break;
 
-        }
-    }
-    return 0;
+			it = mapNodeValToId.find(valOne);
+			if(it == mapNodeValToId.end())
+				numReach = 0;
+			else
+				numReach = findNumReachableByBFS(adjList, it->second, TTL);
+
+			printf("Case %d: %d nodes not reachable from node %d with TTL = %d.\n",
+					caseId, numV - numReach, valOne, TTL);
+
+			caseId++;
+		}
+	}
+	return 0;
 }
-/*
-Sample Input
-16
-10 15 15 20 20 25 10 30 30 47 47 50 25 45 45 65
-15 35 35 55 20 40 50 55 35 40 55 60 40 60 60 65
-35 2 35 3 0 0
-14
-1 2 2 7 1 3 3 4 3 5 5 10 5 11
-4 6 7 6 7 8 7 9 8 9 8 6 6 11
-1 1 1 2 3 2 3 3 0 0
-0
 
-Sample Output
-Case 1: 5 nodes not reachable from node 35 with TTL = 2.
-Case 2: 1 nodes not reachable from node 35 with TTL = 3.
-Case 3: 8 nodes not reachable from node 1 with TTL = 1.
-Case 4: 5 nodes not reachable from node 1 with TTL = 2.
-Case 5: 3 nodes not reachable from node 3 with TTL = 2.
-Case 6: 1 nodes not reachable from node 3 with TTL = 3.
-*/
+int getId(int val, map<int, int> & mapNodeValToId, int *nextAssignId)
+{
+	map<int, int>::iterator it = mapNodeValToId.find(val);
+	int returnId;
 
+	if(it == mapNodeValToId.end())
+	{
+		returnId = *nextAssignId;
+		mapNodeValToId[val] = returnId;
+		(*nextAssignId)++;
+	}
+	else
+		returnId = it->second;
+
+	return returnId;
+}
+
+int findNumReachableByBFS(const vector<vector<int> > & adjList, int startV, int TTL)
+{
+	int numV = (int) adjList.size();
+
+	vector<bool> visited(numV, false);
+
+	queue<pair<int, int> > vQueue;
+	vQueue.push(pair<int, int> (startV, 0) );
+	visited[startV] = true;
+
+	int numReach = 0, timeSoFar, curV, nextV;
+	while(!vQueue.empty())
+	{
+		curV = vQueue.front().first;
+		timeSoFar = vQueue.front().second;
+		vQueue.pop();
+
+		if(timeSoFar > TTL)
+			break;
+
+		numReach++;
+
+		for(int ind = 0; ind < (int) adjList[curV].size(); ind++)
+		{
+			nextV = adjList[curV][ind];
+			if(visited[nextV] == false)
+			{
+				visited[nextV] = true;
+				vQueue.push(pair<int, int>(nextV, timeSoFar + 1));
+			}
+		}		
+	}
+	return numReach;
+}

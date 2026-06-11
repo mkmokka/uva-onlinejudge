@@ -1,86 +1,103 @@
-/*
-544 - Heavy Cargo
-*/
-#include<bits/stdc++.h>
+#include <cstdio>
+#include <map>
+#include <string>
+#include <cstring>
+
 using namespace std;
-vector<pair<int,pair<string,string>>>graph;
-map<string,string>parent;
 
-string find_parent(string s)
-{
-    if(parent[s]=="")
-    {
-        return s;
-    }
-    else
-    {
-        return parent[s]=find_parent(parent[s]);
-    }
-}
+#define MAX_NUM_V 200
+#define MAX_LEN_NAME 30
 
-int main()
+int getId(char name[], map<string, int> & mapNameToId, int * nextIdToAssign);
+void findMaximumLoadBetweenAllPairs(int maxLoadMat[][MAX_NUM_V], int numV);
+int getMin(int a, int b);
+
+int main(void)
 {
-    ///freopen("input.txt", "r", stdin);
-    ///freopen("output.txt", "w", stdout);
-    int node,edge,cost,tc=0;
-    string s1,s2,one,two;
-    while(cin>>node>>edge)
+    int maxLoadMat[MAX_NUM_V][MAX_NUM_V], numV, numE, caseId, nextIdToAssign,
+        v1, v2, weight;
+    map<string, int> mapNameToId;
+    char name[MAX_LEN_NAME + 1];
+
+    //freopen("in.txt", "r", stdin);
+
+    caseId = 1;
+    while(1)
     {
-        if(node==0 && edge==0)
+        scanf("%d %d", &numV, &numE);
+        if(numV == 0 && numE == 0)
             break;
-        graph.clear();
-        parent.clear();
-        for(int i=0; i<edge; i++)
+
+        mapNameToId.clear();
+        nextIdToAssign = 0;
+        memset(maxLoadMat, 0, MAX_NUM_V * MAX_NUM_V * sizeof(int));
+
+        for(int e = 0; e < numE; e++)
         {
-            cin>>s1>>s2>>cost;
-            graph.push_back(make_pair(cost,make_pair(s1,s2)));
+            scanf("%s", name);
+            v1 = getId(name, mapNameToId, &nextIdToAssign);
+            scanf("%s", name);
+            v2 = getId(name, mapNameToId, &nextIdToAssign);
+            scanf("%d", &weight);
+            maxLoadMat[v1][v2] = weight;
+            maxLoadMat[v2][v1] = weight;
         }
-        cin>>s1>>s2;
-        int ans=9999999;
-        sort(graph.rbegin(),graph.rend());
-        for(int i=0; i<edge; i++)
+
+        findMaximumLoadBetweenAllPairs(maxLoadMat, numV);
+
+        scanf("%s", name);
+        v1 = getId(name, mapNameToId, &nextIdToAssign);
+        scanf("%s", name);
+        v2 = getId(name, mapNameToId, &nextIdToAssign);
+
+        if(v1 < numV && v2 < numV)
         {
-            one = find_parent(graph[i].second.first);
-            two = find_parent(graph[i].second.second);
-            if(one!=two)
-            {
-                parent[one]=two;
-                if(ans>graph[i].first)
-                {
-                    ans = graph[i].first;
-                }
-            }
-            if(find_parent(s1)==find_parent(s2))
-            {
-                break;
-            }
+            printf("Scenario #%d\n%d tons\n\n", caseId, maxLoadMat[v1][v2]);
         }
-        cout<<"Scenario #"<<++tc<<endl;
-        cout<<ans<<" tons"<<endl;
-        cout<<endl;
+
+        caseId++;
     }
     return 0;
 }
 
-/*
-Sample Input
-4 3
-Karlsruhe Stuttgart 100
-Stuttgart Ulm 80
-Ulm Muenchen 120
-Karlsruhe Muenchen
-5 5
-Karlsruhe Stuttgart 100
-Stuttgart Ulm 80
-Ulm Muenchen 120
-Karlsruhe Hamburg 220
-Hamburg Muenchen 170
-Muenchen Karlsruhe
-0 0
+int getId(char name[], map<string, int> & mapNameToId, int * nextIdToAssign)
+{
+    map<string, int>::iterator it = mapNameToId.find(name);
+    int returnId;
 
-Sample Output
-Scenario #1
-80 tons
-Scenario #2
-170 tons
-*/
+    if(it == mapNameToId.end())
+    {
+        returnId = *nextIdToAssign;
+        mapNameToId[name] = *nextIdToAssign;
+        (*nextIdToAssign)++;
+    }
+    else
+        returnId = it->second;
+
+    return returnId;
+}
+
+// This is a maxi-min problem. We use Floy-Warshall's Algorithm
+void findMaximumLoadBetweenAllPairs(int maxLoadMat[][MAX_NUM_V], int numV)
+{
+    int u, v, k, load;
+
+    for(k = 0; k < numV; k++)
+        for(u = 0; u < numV; u++)
+            for(v = 0; v < numV; v++)
+            {
+                if(maxLoadMat[u][k] && maxLoadMat[k][v])
+                {
+                    load = getMin(maxLoadMat[u][k], maxLoadMat[k][v]);
+                    if(load > maxLoadMat[u][v])
+                        maxLoadMat[u][v] = load;
+                }
+            }
+}
+
+int getMin(int a, int b)
+{
+    if(a > b)
+        return b;
+    return a;
+}

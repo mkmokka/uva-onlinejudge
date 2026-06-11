@@ -1,151 +1,130 @@
-/*
-532 Dungeon Master
-*/
+#include <cstdio>
+#include <queue>
+#include <utility>
 
-
-/// BFS 3D grid .....
-/*
-Given a set of maps which constitute a 3-Dimensional world (a dungeon),
-determine whether it is possible to travel from the starting cell (marked as 'S')
-to the ending cell (marked as 'E') and calculate the minimal time-cost for the travelling if possible.
-
-As a 3D BFS problem, each cell has 6 possible next move:
-{up, down, left, right, previous layer, next layer}
-remember to try them all.
-
-*/
-#include<bits/stdc++.h>
 using namespace std;
-bool visited[30][30][30];
-vector<vector<string> > adj;
-int z,y,x;
-int di[]= {-1,1,0,0,0,0};
-int dj[]= {0,0,-1,1,0,0};
-int dk[]= {0,0,0,0,-1,1};
-struct node
+
+#define NUM_DIRECTION 6
+#define MAX_SIZE 30
+#define START 'S'
+#define END 'E'
+#define EMPTY '.'
+#define ROCK '#'
+
+const int rowOffset[NUM_DIRECTION] = {0, 0, 0, 0, -1, 1};
+const int colOffset[NUM_DIRECTION] = {1, -1, 0, 0, 0, 0};
+const int heightOffset[NUM_DIRECTION] = {0, 0, 1, -1, 0, 0};
+
+struct Position 
 {
-    int a;
-    int b;
-    int c;
-    int cost;
-    node(int x,int y, int z, int w)
-    {
-        a=x;
-        b=y;
-        c=z;
-        cost=w;
-    }
+	int height, row, col;
+
+	Position() : height(0), row(0), col(0) {}
+	Position(int mHeight, int mRow, int mCol) : height(mHeight), row(mRow), col(mCol) {}
+	Position(const Position & another) : height(another.height), row(another.row), col(another.col) {}
+
+	Position & operator= (const Position & another);
+	bool operator== (const Position & another) const;
 };
 
-void bfs(int a,int b, int c)
+Position & Position::operator= (const Position & another)
 {
-    memset(visited,false,sizeof(visited));
-    queue<node>q;
-    q.push(node(a,b,c,0));
-    visited[a][b][c]=true;
-    int j,k,l,one,two,three;;
-    while(!q.empty())
-    {
-        node aux = q.front();
-        q.pop();
-        j = aux.a;
-        k = aux.b;
-        l = aux.c;
-        if(adj[l][k][j]=='E')
-        {
-            printf("Escaped in %d minute(s).\n",aux.cost);
-            return;
-        }
-        for(int i=0; i<6; i++)
-        {
-            one = j + di[i];
-            two = k +dj[i];
-            three = l + dk[i];
-            if(one>=0 && one<x && two>=0 && two<y && three>=0 && three<z && !visited[one][two][three] && adj[three][two][one]!='#')
-            {
-                q.push(node(one,two,three,aux.cost+1));
-                visited[one][two][three]=true;
+	if(this == &another)
+		return *this;
+	height = another.height;
+	row = another.row;
+	col = another.col;
 
-            }
-
-        }
-    }
-    printf("Trapped!\n");
-    return;
-
-
+	return *this;
 }
 
-
-
-int main()
+bool Position::operator== (const Position & another) const
 {
-    int pos1,pos2,pos3;
-    vector<string>v;
-    string s;
-    while(1)
-    {
-        cin>>z>>y>>x;
-        if(z==0 && x==0 && y==0)
-            break;
-        adj.clear();
-        for(int i=0; i<z; i++)
-        {
-            v.clear();
-            for(int j=0; j<y; j++)
-            {
-                cin>>s;
-                v.push_back(s);
-            }
-            adj.push_back(v);
-        }
-        for(int i=0; i<z; i++)
-        {
-            for(int j=0; j<y; j++)
-            {
-                for(int k=0; k<x; k++)
-                {
-                    if(adj[i][j][k]=='S')
-                    {
-                        pos1=k;
-                        pos2=j;
-                        pos3=i;
-                        goto xx;
-
-                    }
-                }
-            }
-        }
-xx:
-        bfs(pos1,pos2,pos3);
-    }
-    return 0;
+	return height == another.height && row == another.row && col == another.col;
 }
 
-/*
-Sample Input
-3 4 5
-S....
-.###.
-.##..
-###.#
-#####
-#####
-##.##
-##...
-#####
-#####
-#.###
-####E
+Position findPosition(char dungeon[][MAX_SIZE][MAX_SIZE + 1], int numHeight, int numRow, int numCol, char pos);
+int findShortestPathBFS(char dungeon[][MAX_SIZE][MAX_SIZE + 1], int numHeight, int numRow, int numCol, Position & startPos);
+bool isValidPosition(const Position & pos, int numHeight, int numRow, int numCol);
 
-1 3 3
-S##
-#E#
-###
+int main(void)
+{
+	char dungeon[MAX_SIZE][MAX_SIZE][MAX_SIZE + 1];
+	int numRow, numCol, numHeight, timeEscape;
 
-0 0 0
+	while(1)
+	{
+		scanf("%d %d %d", &numHeight, &numRow, &numCol);
+		if(numHeight == 0 && numRow == 0 && numCol == 0)
+			break;
 
-Sample Output
-Escaped in 11 minute(s).
-Trapped!
-*/
+		for(int height = 0; height < numHeight; height++)
+			for(int row = 0; row < numRow; row++)
+				scanf("%s", dungeon[height][row]);
+
+		Position startPos = findPosition(dungeon, numHeight, numRow, numCol, START);
+
+		timeEscape = findShortestPathBFS(dungeon, numHeight, numRow, numCol, startPos);
+		if(timeEscape < 0)
+			printf("Trapped!\n");
+		else
+			printf("Escaped in %d minute(s).\n", timeEscape);
+	}
+	return 0;
+}
+
+Position findPosition(char dungeon[][MAX_SIZE][MAX_SIZE + 1], int numHeight, int numRow, int numCol, char pos)
+{
+	for(int height = 0; height < numHeight; height++)
+		for(int row = 0; row < numRow; row++)
+			for(int col = 0; col < numCol; col++)
+				if(dungeon[height][row][col] == pos)
+					return Position(height, row, col);
+
+	return Position(-1, -1, -1); 	// Dummy
+}
+
+int findShortestPathBFS(char dungeon[][MAX_SIZE][MAX_SIZE + 1], int numHeight, int numRow, int numCol, Position & startPos)
+{
+	int timeEscape;
+
+	queue<pair<Position, int> > posQueue;
+	posQueue.push(pair<Position, int> (startPos, 0));
+	dungeon[startPos.height][startPos.row][startPos.col] = ROCK;
+
+	Position curPos, nextPos;
+
+	while(!posQueue.empty())
+	{
+		curPos = posQueue.front().first;
+		timeEscape = posQueue.front().second;
+		posQueue.pop();
+
+		for(int direction = 0; direction < NUM_DIRECTION; direction++)
+		{
+			nextPos = Position(curPos.height + heightOffset[direction],
+					   curPos.row + rowOffset[direction],
+					   curPos.col + colOffset[direction]);
+
+			if(isValidPosition(nextPos, numHeight, numRow, numCol) &&
+			   dungeon[nextPos.height][nextPos.row][nextPos.col] != ROCK)
+			{
+				if(dungeon[nextPos.height][nextPos.row][nextPos.col] == END)
+					return timeEscape + 1;
+				
+				dungeon[nextPos.height][nextPos.row][nextPos.col] = ROCK;
+				posQueue.push(pair<Position, int> (nextPos, timeEscape + 1));
+			}   
+		}		
+	}
+	return -1;
+}
+
+bool isValidPosition(const Position & pos, int numHeight, int numRow, int numCol)
+{
+	if(pos.height < 0 || pos.row < 0 || pos.col < 0)
+		return false;
+	if(pos.height >= numHeight || pos.row >= numRow || pos.col >= numCol)
+		return false;
+	return true;
+}

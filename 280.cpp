@@ -1,92 +1,98 @@
-/*
-280 - Vertex
-*/
-#include<bits/stdc++.h>
+/*******************************************************
+ * Author: Nguyen Truong Duy
+ *******************************************************/
+
+/* Methodology:
+ *  + Perform a DFS / BFS to find reachable / unreachable nodes in the given
+ *      directed graph.
+ *  + Note: A vertex u is reachable from u if and only if.
+ *      - There is a loop at u.
+ *      - There is a cycle starting at and ending at u.
+ *  + Time complexity: O(Q * (V + E)) where
+ *      - Q is the number of queries.
+ *      - V, E are the number of vertices and edges.
+ */
+
+#include <cstdio>
+#include <vector>
+
 using namespace std;
-vector<int>graph[10000];
-int visit[10000];
-int dfs(int u)
-{
-    queue<int>q;
-    q.push(u);
-    visit[u]=0;
-    int cnt=0;
-    while(!q.empty())
-    {
-        int t = q.front();
-        q.pop();
-        for(int i=0; i<graph[t].size(); i++)
-        {
-            int v = graph[t][i];
-            if(visit[v]==0)
-            {
-                cnt++;
-                visit[v]=1;
-                q.push(v);
-            }
-        }
-    }
-    return max(cnt,0);
-}
 
-int main()
+void getUnreachableNodes(const vector<vector<int> > & adjList, int vStart, vector<int> & unreachableList);
+void DFS(const vector<vector<int> > & adjList, int u, vector<bool> & hasReached);
+
+int main(void)
 {
-    //freopen("input.txt", "r", stdin);
-    //freopen("output.txt", "w", stdout);
-    int n,x,y,m;
-    while(cin>>n)
+    vector<vector<int> > adjList;
+    vector<int> unreachableList, emptyList;
+    int numV, vStart, vEnd, numQuery;
+
+    while(1)
     {
-        if(n==0)
+        scanf("%d", &numV);
+        if(!numV)
             break;
-        while(cin>>x)
-        {
-            if(x==0)
-                break;
-            while(cin>>y)
-            {
-                if(y==0)
-                    break;
-                graph[x].push_back(y);
-            }
-        }
-        cin>>m;
-        for(int i=1; i<=m; i++)
-        {
-            cin>>y;
-            memset(visit,0,sizeof(visit));
-            int ans = n - dfs(y);
-            cout<<ans;
-            if(y>0)
-            {
-                for(int j=1; j<=n; j++)
-                {
-                    if(!visit[j])
-                    {
-                        cout<<" "<<j;
-                    }
-                }
-            }
-            cout<<endl;
-        }
-        for(int i=1; i<=n; i++)
-        {
-            graph[i].clear();
-        }
-        memset(visit,0,sizeof(visit));
 
+        adjList.assign(numV, emptyList);
+        while(1)
+        {
+            scanf("%d", &vStart);
+            if(!vStart)
+                break;
+
+            vStart--;
+            while(1)
+            {
+                scanf("%d", &vEnd);
+                if(!vEnd)
+                    break;
+
+                vEnd--;
+                adjList[vStart].push_back(vEnd);
+            }
+        }
+
+        scanf("%d", &numQuery);
+        for(int i = 0; i < numQuery; i++)
+        {
+            scanf("%d", &vStart);
+            vStart--;
+
+            getUnreachableNodes(adjList, vStart, unreachableList);
+
+            printf("%d", (int) unreachableList.size());
+            for(int i = 0; i < (int) unreachableList.size(); i++)
+                printf(" %d", unreachableList[i] + 1);  // Results are 1-indexing
+            printf("\n");
+        }
+    }
+
+    return 0;
+}
+
+void getUnreachableNodes(const vector<vector<int> > & adjList, int vStart, vector<int> & unreachableList)
+{
+    int numV = (int) adjList.size();
+    vector<bool> hasReached(numV, false);
+
+    DFS(adjList, vStart, hasReached);
+
+    unreachableList.clear();
+    for(int v = 0; v < numV; v++)
+        if(!hasReached[v])
+            unreachableList.push_back(v);
+}
+
+void DFS(const vector<vector<int> > & adjList, int u, vector<bool> & hasReached)
+{
+    for(int ind = 0; ind < (int) adjList[u].size(); ind++)
+    {
+        int v = adjList[u][ind];
+
+        if(!hasReached[v])
+        {
+            hasReached[v] = true;
+            DFS(adjList, v, hasReached);
+        }
     }
 }
-/*
-Sample Input
-3
-1 2 0
-2 2 0
-3 1 2 0
-0
-2 1 2
-0
-
-Sample Output
-2 1 3
-2 1 3
-*/
