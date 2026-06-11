@@ -1,97 +1,136 @@
-/*
-762 - We Ship Cheap
-*/
+#include <cstdio>
+#include <map>
+#include <vector>
+#include <string>
+#include <queue>
 
-#include<bits/stdc++.h>
 using namespace std;
 
-map<string,int>visited;
-map<string, string > path;
-int bfs(string a, string b,map<string,vector<string> > graph)
-{
+#define MAX_LEN 5
 
-    queue<string>q;
-    q.push(a);
-    visited[a]=1;
-    while(!q.empty())
+int updateRecord(char cityName[], map<string, int> & mapNameToId, vector<string> & mapIdToName,
+                 vector<vector<int> > & adjList, int *id);
+void breathFirstSearch(const vector<vector<int> > & adjList, int src, int dest, vector<int> & parentArr);
+void printPath(int src, int dest, const vector<int> & parentArr, const vector<string> & mapIdToName);
+
+int main(void)
+{
+    vector<string> mapIdToName;
+    map<string, int> mapNameToId;
+    vector<vector<int> > adjList;
+    char cityOne[MAX_LEN + 1], cityTwo[MAX_LEN + 1];
+    int numLink, id, idOne, idTwo;
+    bool isFirst = true, existPath;
+    map<string, int>::iterator itOne, itTwo;
+    vector<int> parentArr;
+
+    //freopen("in.txt", "r", stdin);
+
+    while(scanf("%d", &numLink) > 0)
     {
-        string top = q.front();
-        q.pop();
-        if(top==b)
-            return visited[b];
-        int size = graph[top].size();
-        for(int i=0; i<size; i++)
-        {
-            string v = graph[top][i];
-            if(visited[v]==-1)
+            id = 0;
+            mapIdToName.clear();
+            mapNameToId.clear();
+            adjList.clear();
+
+            for(int i = 0; i < numLink; i++)
             {
-                visited[v]=1;
-                visited[v] = visited[top]+1;
-                path[v] = top;
-                q.push(v);
+                scanf("%s %s", cityOne, cityTwo);
+
+                idOne = updateRecord(cityOne, mapNameToId, mapIdToName, adjList, &id);
+                idTwo = updateRecord(cityTwo, mapNameToId, mapIdToName, adjList, &id);
+
+                adjList[idOne].push_back(idTwo);
+                adjList[idTwo].push_back(idOne);
+            }
+
+            scanf("%s %s", cityOne, cityTwo);
+            itOne = mapNameToId.find(cityOne);
+            itTwo = mapNameToId.find(cityTwo);
+            existPath = true;
+            if(itOne == mapNameToId.end() || itTwo == mapNameToId.end())
+                existPath = false;
+            else
+            {
+                breathFirstSearch(adjList, itOne->second, itTwo->second, parentArr);
+
+                if(parentArr[itTwo->second] < 0)
+                    existPath = false;
+            }
+
+            if(isFirst)
+            {
+                isFirst = false;
+            }
+            else
+                printf("\n");
+            if(existPath)
+            {
+                printPath(itOne->second, itTwo->second, parentArr, mapIdToName);
+            }
+            else
+                printf("No route\n");
+    }
+
+    return 0;
+}
+
+int updateRecord(char cityName[], map<string, int> & mapNameToId, vector<string> & mapIdToName,
+                 vector<vector<int> > & adjList, int *id)
+{
+    vector<int> emptyList;
+    int assignId;
+    map<string, int>::iterator it = mapNameToId.find(cityName);
+
+    if(it == mapNameToId.end())
+    {
+        assignId = *id;
+        mapNameToId[cityName] = assignId;
+        *id = *id + 1;
+        mapIdToName.push_back(cityName);
+        adjList.push_back(emptyList);
+        return assignId;
+    }
+
+    return it->second;
+
+}
+
+void breathFirstSearch(const vector<vector<int> > & adjList, int src, int dest, vector<int> & parentArr)
+{
+    int numV = (int) adjList.size();
+
+    parentArr.assign(numV, -1);
+    parentArr[src] = src;
+
+    queue<int> vQueue;
+    vQueue.push(src);
+
+    int v, nextV;
+    while(!vQueue.empty())
+    {
+        v = vQueue.front();
+        vQueue.pop();
+
+        for(int ind = 0; ind < (int) adjList[v].size(); ind++)
+        {
+            nextV = adjList[v][ind];
+
+            if(parentArr[nextV] < 0)
+            {
+                parentArr[nextV] = v;
+                vQueue.push(nextV);
             }
         }
     }
-    return -1;
-
 }
-void roadprint(string a, string b)
+
+void printPath(int src, int dest, const vector<int> & parentArr, const vector<string> & mapIdToName)
 {
-    if(a==b)
+    if(dest == src)
         return;
-    roadprint(path[a],b);
-    cout<<path[a]<<" "<<a<<endl;
 
+    int parent = parentArr[dest];
+    printPath(src, parent, parentArr, mapIdToName);
+    printf("%s %s\n", mapIdToName[parent].c_str(), mapIdToName[dest].c_str());
 }
-
-
-int main()
-{
-    int node;
-    bool flag=false;
-    while(scanf("%d",&node)==1)
-    {
-        map<string, vector<string> > graph;
-        map<string,string>::iterator it;
-        string a,b,start,end;
-        for(int i=0; i<node; i++)
-        {
-            cin>>a>>b;
-            graph[a].push_back(b);
-            graph[b].push_back(a);
-            visited[a]=-1;
-            visited[b]=-1;
-        }
-        cin>>start>>end;
-        if(flag==true)
-            cout<<endl;
-        flag=true;
-        if(bfs(start,end,graph)!=-1)
-        {
-            roadprint(end,start);
-        }
-        else
-            cout<<"No route"<<endl;
-    }
-}
-/*
-Sample input
-3
-JV PT
-KA PT
-KA HP
-JV HP
-
-2
-JV PT
-KA HP
-JV HP
-
-Sample output
-
-JV PT
-PT KA
-KA HP
-
-No route
-*/

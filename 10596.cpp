@@ -1,89 +1,95 @@
-/*
-10596 - Morning Walk
-*/
-#include<bits/stdc++.h>
+/*******************************************************
+ * Author: Nguyen Truong Duy
+ *******************************************************/
+
+//// C++11 ////
+
+/**
+ * Methodology:
+ * - The problem essentially asks if there exists an Euler tour that visits
+ * all edges in the given graph
+ * - A graph has an Euler tour if and only if it is connected and every vertex
+ * has an even degree (*)
+ * - Gotchas:
+ *  + For this problem, we should exclude isolated vertices when checking
+ * connectivity. That means if the graph has 1 connected component whose
+ * number of edges is larger than 0 and every other vertices (not in this
+ * connected component) are isolated vertices, then connectivity requirement
+ * in (*) is satisfied
+ *  + If the number of edges is 0, then the ouput should be "Not Possible"
+ *
+ * - Time complexity: O(V + E)
+ */
+
+#include <cstdio>
+#include <vector>
+
 using namespace std;
 
-bool check_degree(int n,const vector<int>& degree)
-{
-    for(int i=0; i<n; i++)
-    {
-        if(degree[i]%2==1)
-        {
-            return false;
-        }
+void dfs(
+    const vector<vector<int> >& adjList,
+    int startV,
+    vector<bool>& visited) {
+  visited[startV] = true;
+  for (auto&& neighborV : adjList[startV]) {
+    if (!visited[neighborV]) {
+      dfs(adjList, neighborV, visited);
     }
-    return true;
+  }
 }
-void dfs(int n,int i,const vector<vector<bool>>&graph,vector<bool>&visited)
-{
 
-    visited[i]=true;
-    const vector<bool>&g = graph[i];
-    for(int j=0; j<n; j++)
-    {
-        if(g[j] && !visited[j])
-        {
-            dfs(n,j,graph,visited);
-        }
+bool existEulerTour(const vector<vector<int> >& adjList) {
+  // Checks if every vertex has even degree
+  for (auto&& neighbors : adjList) {
+    if (neighbors.size() & 1) {
+      return false;
+    }
+  }
+
+  // Checks if the graph is connected
+  vector<bool> visited(adjList.size(), false);
+  // Excludes all isolated vertices in our traversal
+  for (int v = 0; v < adjList.size(); ++v) {
+    if (!adjList[v].size()) {
+      visited[v] = true;
+    }
+  }
+  int startV = -1;
+  for (int v = 0; v < visited.size(); ++v) {
+    if (!visited[v]) {
+      startV = v;
+      break;
+    }
+  }
+  if (startV >= 0) {
+    dfs(adjList, startV, visited);
+  }
+  for (auto&& boolValue : visited) {
+    if (!boolValue) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+int main(void) {
+  int numV, numE, u, v;
+  vector<vector<int> > adjList;
+
+  while (scanf("%d %d", &numV, &numE) > 0) {
+    adjList.assign(numV, vector<int>());
+    for (int i = 0; i < numE; ++i) {
+      scanf("%d %d", &u, &v);
+      adjList[u].push_back(v);
+      adjList[v].push_back(u);
     }
 
-
-}
-bool check_connection(int n, const vector<int>& degree, const vector<vector<bool>>&graph)
-{
-    vector<bool>visited(n,false);
-    int start;
-    for(start=0; start<n; start++)
-        if(degree[start])
-            break;
-    if(start<n)
-        dfs(n,start,graph,visited);
-    for(int i=0; i<n; i++)
-        if(degree[i])
-        {
-            if(!visited[i])
-                return false;
-        }
-    return true;
-}
-
-
-int main()
-{
-    int n,r;
-    while(cin>>n>>r)
-    {
-        vector<int>degree(n,0);
-        vector<vector<bool> >graph(n,vector<bool>(n,false));
-        for(int i=0; i<r; i++)
-        {
-            int a,b;
-            cin>>a>>b;
-            degree[a]++;
-            degree[b]++;
-            graph[a][b]=graph[b][a]=true;
-        }
-        if(r && check_degree(n,degree) && check_connection(n,degree,graph))
-        {
-            cout<<"Possible\n";
-        }
-        else
-        {
-            cout<<"Not Possible\n";
-        }
+    if (numE && existEulerTour(adjList)) {
+      printf("Possible\n");
+    } else {
+      printf("Not Possible\n");
     }
+  }
+  return 0;
 }
-
-/*
-Sample Input
-2 2
-0 1
-1 0
-2 1
-0 1
-
-Sample Output
-Possible
-Not Possible
-*/

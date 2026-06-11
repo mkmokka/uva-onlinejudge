@@ -1,158 +1,100 @@
-/*
-10557 - XYZZY
-*/
+#include <cstdio>
+#include <queue>
+#include <utility>
+#include <vector>
+#include <cstring>
 
-#include<bits/stdc++.h>
 using namespace std;
 
-vector<int>graph[105];
-bool visit[105];
-int n;
-int dist[105];
-int energy[105];
+#define INIT_ENERGY 100
 
-bool bfs(int u)
-{
-    visit[u]=true;
-    queue<int>q;
-    q.push(u);
-    while(!q.empty())
-    {
-        int u = q.front();
-        q.pop();
-        if(u==n)
-            return true;
-        for(int i=0; i<graph[u].size(); i++)
-        {
-            if(!visit[graph[u][i]])
-            {
-                visit[graph[u][i]]=true;
-                q.push(graph[u][i]);
-            }
-        }
-    }
-    return false;
-}
+bool canReach(const vector<vector<int> > & adjList, const vector<int> & roomEnergy,
+              int startR, int initEnergy, int endR, int maxEnergyNeeded);
 
-int main()
+int main(void)
 {
-    //freopen("input.txt", "r", stdin);
-    //freopen("output.txt", "w", stdout);
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-    while(cin>>n && n>0)
+    int numRoom, numNeighbor, neighbor, negativeEnergy;
+    vector<int> roomEnergy, emptyList;
+    vector<vector<int> > adjList;
+
+ //   freopen("in.txt", "r", stdin);
+
+    while(1)
     {
-        int e,room;
-        for(int i=1; i<=n; i++)
+        scanf("%d", &numRoom);
+        if(numRoom < 0)
+            break;
+
+        roomEnergy.assign(numRoom, 0);
+        adjList.assign(numRoom, emptyList);
+        negativeEnergy = 0;
+
+        for(int room = 0; room < numRoom; room++)
         {
-            cin>>e>>room;
-            graph[i].clear();
-            energy[i]=e;
-            for(int j=0; j<room; j++)
+            scanf("%d %d", &roomEnergy[room], &numNeighbor);
+
+            if(roomEnergy[room] < 0)
+                negativeEnergy -= roomEnergy[room];
+
+            for(int i = 0; i < numNeighbor; i++)
             {
-                int x;
-                cin>>x;
-                graph[i].push_back(x);
+                scanf("%d", &neighbor);
+                adjList[room].push_back(neighbor - 1);
             }
         }
-        dist[1]=100;
-        for(int i=2; i<=n; i++)
-        {
-            dist[i]=-(1e6+7);
-        }
-        ///here we find all distance based cost from 1 to n
-        for(int i=0; i<n-2; i++)
-        {
-            for(int u=1; u<=n; u++)
-            {
-                for(int j=0; j<graph[u].size(); j++)
-                {
-                    int v = graph[u][j];
-                    int d = energy[u];
-                    if(dist[u]+d>0)
-                    {
-                        dist[v]=max(dist[v],dist[u]+d);
-                    }
-                }
-            }
-        }
-        ///if cost is still positive then we have a clear path
-        if(dist[n]>0)
-        {
-            cout<<"winnable"<<endl;
-        }///else we must go for further steps
+
+        if(canReach(adjList, roomEnergy, 0, INIT_ENERGY, numRoom - 1, negativeEnergy))
+            printf("winnable\n");
         else
-        {
-            bool possible =false;
-            ///again checking if the cost is still update_able
-            ///which means we have a cycle
-            ///and after finding a cycle if we able to reach n
-            ///then this is winnable
-            for(int u=1; u<=n && !possible ; u++)
-            {
-                for(int j=0; j<graph[u].size(); j++)
-                {
-                    int v = graph[u][j];
-                    int d = energy[u];
-                    if(dist[u]+d>0 && dist[v]<dist[u]+d)
-                    {
-                        for(int i=1; i<=n; i++)
-                        {
-                            visit[i]=false;
-                        }
-                        if(bfs(u))
-                        {
-                            possible=true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if(possible)
-            {
-                cout<<"winnable"<<endl;
-            }
-            else
-            {
-                cout<<"hopeless"<<endl;
-            }
-        }
-
+            printf("hopeless\n");
     }
+
     return 0;
 }
 
-/*
-Sample Input
-5
-0 1 2
--60 1 3
--60 1 4
-20 1 5
-0 0
-5
-0 1 2
-20 1 3
--60 1 4
--60 1 5
-0 0
-5
-0 1 2
-21 1 3
--60 1 4
--60 1 5
-0 0
-5
-0 1 2
-20 2 1 3
--60 1 4
--60 1 5
-0 0
--1
+bool canReach(const vector<vector<int> > & adjList, const vector<int> & roomEnergy,
+              int startR, int initEnergy, int endR, int totalNegativeEnergy)
+{
+    int maxEnergyNeeded = totalNegativeEnergy + 1;
+    if(initEnergy > maxEnergyNeeded)
+        initEnergy = maxEnergyNeeded;
 
-Sample Output
-hopeless
-hopeless
-winnable
-winnable
-*/
+    queue<pair<int, int> > vQueue;
+
+    int numV = (int) adjList.size();
+    bool visited[numV][maxEnergyNeeded + 2];
+
+    memset((bool *) visited, false, numV * (maxEnergyNeeded + 2) * sizeof(bool));
+
+    vQueue.push(make_pair(startR, initEnergy));
+    visited[startR][initEnergy] = true;
+
+    pair<int, int> state;
+    int curR, energy, nextR, nextEnergy;
+    while(!vQueue.empty())
+    {
+        state = vQueue.front();
+        curR = state.first;
+        energy = state.second;
+        vQueue.pop();
+
+        if(curR == endR)
+            return true;
+
+        for(int i = 0; i < (int) adjList[curR].size(); i++)
+        {
+            nextR = adjList[curR][i];
+            nextEnergy = energy + roomEnergy[nextR];
+            if(nextEnergy > 5 * maxEnergyNeeded)
+                nextEnergy = maxEnergyNeeded;
+
+            if(nextEnergy > 0 && visited[nextR][nextEnergy] == false)
+            {
+                visited[nextR][nextEnergy] = true;
+                vQueue.push(make_pair(nextR, nextEnergy));
+            }
+        }
+    }
+
+    return false;
+}
