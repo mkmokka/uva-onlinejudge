@@ -1,79 +1,87 @@
-/*
-10305 - Ordering Tasks
-*/
+#include <cstdio>
+#include <vector>
+#include <queue>
 
-#include<bits/stdc++.h>
 using namespace std;
-#define NODE 101
-int graph[NODE][NODE];
-int n,m;
 
-void dfs(int u,bool visited[],stack<int>&stk)
+void getTopoOrder(const vector<vector<int> > & adjList, vector<int> & topoOrder);
+void getInDegree(const vector<vector<int> > & adjLIst, vector<int> & inDegree);
+
+int main(void)
 {
-    visited[u]=true;
-    for(int v=1; v<=n; v++)
-    {
-        if(graph[u][v])
-        {
-            if(!visited[v])
-            {
-                dfs(v,visited,stk);
-            }
-        }
-    }
-    stk.push(u);
-}
+    int numV, numE, vOne, vTwo;
+    vector<vector<int> > adjList;
+    vector<int> emptyList, topoOrder;
 
-void top_sort()
-{
-    stack<int>stk;
-    bool visited[n];
-    for(int i=1; i<=n; i++)
-        visited[i]=false;
-    for(int i=1; i<=n; i++)
-    {
-        if(!visited[i])
-        {
-            dfs(i,visited,stk);
-        }
-    }
+   // freopen("in.txt", "r", stdin);
 
-    printf("%d",stk.top());
-    stk.pop();
-    while(!stk.empty())
+    while(1)
     {
-        printf(" %d",stk.top());
-        stk.pop();
-    }
-    printf("\n");
-}
-
-int main()
-{
-    while(scanf("%d %d",&n,&m)==2)
-    {
-        if(n==0 && m==0)
+        scanf("%d %d", &numV, &numE);
+        if(numV == 0 && numE == 0)
             break;
-        memset(graph,0,sizeof(graph));
-        for(int i=1; i<=m; i++)
+
+        adjList.assign(numV, emptyList);
+
+        for(int e = 0; e < numE; e++)
         {
-            int a,b;
-            scanf("%d %d",&a,&b);
-            graph[a][b]=1;
+            scanf("%d %d", &vOne, &vTwo);
+            adjList[vOne - 1].push_back(vTwo - 1);
         }
-        top_sort();
+
+        getTopoOrder(adjList, topoOrder);
+
+        printf("%d", topoOrder[0] + 1);
+        for(int v = 1; v < (int) topoOrder.size(); v++)
+            printf(" %d", topoOrder[v] + 1);
+        printf("\n");
+
     }
     return 0;
 }
-/*
-Sample Input
-5 4
-1 2
-2 3
-1 3
-1 5
-0 0
 
-Sample Output
-1 4 2 5 3
-*/
+void getTopoOrder(const vector<vector<int> > & adjList, vector<int> & topoOrder)
+{
+    topoOrder.clear();
+
+    int numV = (int) adjList.size();
+    vector<int> inDegree;
+
+    getInDegree(adjList, inDegree);
+
+    int v, nextV;
+    queue<int> vQueue;
+    for(v = 0; v < numV; v++)
+        if(!inDegree[v])
+            vQueue.push(v);
+
+    while(!vQueue.empty())
+    {
+        v = vQueue.front();
+        vQueue.pop();
+
+        topoOrder.push_back(v);
+
+        for(int ind = 0; ind < (int) adjList[v].size(); ind++)
+        {
+            nextV = adjList[v][ind];
+            inDegree[nextV]--;
+            if(!inDegree[nextV])
+                vQueue.push(nextV);
+        }
+    }
+}
+
+void getInDegree(const vector<vector<int> > & adjList, vector<int> & inDegree)
+{
+    int v, ind, neighborV, numV = (int) adjList.size();
+
+    inDegree.assign(numV, 0);
+
+    for(v = 0; v < numV; v++)
+        for(ind = 0; ind < (int) adjList[v].size(); ind++)
+        {
+            neighborV = adjList[v][ind];
+            inDegree[neighborV]++;
+        }
+}
