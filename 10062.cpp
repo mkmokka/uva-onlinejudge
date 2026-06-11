@@ -1,66 +1,61 @@
-/*
-10062 - Tell me the frequencies!
-*/
-#include<bits/stdc++.h>
+#include <cstdio>
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 using namespace std;
 
+#define MAX_NUM_CHAR 256
+#define MAX_LEN_LINE 1000
+#define LOWER_BOUND 32
+#define UPPER_BOUND 127
 
-bool compare(const pair<int, int>&i, const pair<int, int>&j)
+void sortFreq(char line[], vector<pair<int, int> > & charAndFreqVect);
+bool compareCharFreqPair(const pair<int, int> & one, const pair<int, int> & two);
+
+int main(void)
 {
-    if(i.second==j.second)return i.first>j.first;
-    else
+    char line[MAX_LEN_LINE + 1];
+    vector<pair<int, int> > charAndFreqVect;
+    bool isFirst = true;
+
+    while(gets(line) != NULL)
     {
-        return i.second < j.second;
+        sortFreq(line, charAndFreqVect);
+
+        if(isFirst)
+            isFirst = false;
+        else
+            printf("\n");
+
+        for(int i = 0; i < (int) charAndFreqVect.size(); i++)
+            printf("%d %d\n", charAndFreqVect[i].first, charAndFreqVect[i].second);
     }
+    return 0;
 }
 
-int main()
+void sortFreq(char line[], vector<pair<int, int> > & charAndFreqVect)
 {
-    string str;
-    int t=0;
-    while(getline(cin, str))
-    {
-        t++;
-        int ar[130]= {0};
-        int len = str.length();
+    int freqTable[MAX_NUM_CHAR] = {0};
 
-        vector< pair<int,int> >v;
+    for(int i = 0; line[i] != '\0'; i++)
+        if(line[i] >= LOWER_BOUND && line[i] <= UPPER_BOUND)
+            freqTable[(int) line[i]]++;
 
-        for(int i=0; i<len; i++)
-        {
-            int d = (int)str[i];
-            ar[d]++;
-        }
-        for(int i=0; i<130; i++)
-        {
-            if(ar[i]!=0)
-            {
-                v.push_back(make_pair(i,ar[i]));
-            }
-        }
+    charAndFreqVect.clear();
+    for(int i = LOWER_BOUND; i <= UPPER_BOUND; i++)
+        if(freqTable[i])
+            charAndFreqVect.push_back(pair<int, int> (i, freqTable[i]));
 
-        sort(v.begin(),v.end(),compare);
-
-        if(t>1)cout<<endl;
-        for(int i=0; i<v.size(); i++)
-        {
-            cout<<v.at(i).first<<" ";
-            cout<<v[i].second<<endl;
-        }
-        v.erase(v.begin(), v.end());
-    }
-return 0;
+    sort(charAndFreqVect.begin(), charAndFreqVect.end(), compareCharFreqPair);
 }
-/*
-Sample Input
-AAABBC
-122333
 
-Sample Output
-67 1
-66 2
-65 3
-49 1
-50 2
-51 3
-*/
+bool compareCharFreqPair(const pair<int, int> & one, const pair<int, int> & two)
+{
+    if(one.second < two.second)
+        return true;
+    if(one.second > two.second)
+        return false;
+
+    return one.first > two.first;
+}

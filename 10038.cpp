@@ -1,53 +1,57 @@
-/*
-10038 - Jolly Jumpers
-*/
-#include<bits/stdc++.h>
+#include <iostream>
+#include <vector>
 using namespace std;
+
+bool isJolly(vector<int> & arr);
 
 int main()
 {
-    int test;
-    while(cin>>test)
-    {
-        int ar[test+1];
-        for(int i=0; i<test; i++)
-        {
-            cin>>ar[i];
-        }
-        int check[3001]= {0},flag=0;
+    int arrSize;
 
-        for(int i = 1; i<test; i++)
-        {
-            int diff = abs(ar[i]-ar[i-1]);
-            if(diff<test)
-            {
-                check[diff]++;
-            }
-        }
-        for(int i=1; i<test; i++)
-        {
-            if(check[i]==0)
-            {
-                flag =1;
-                break;
-            }
-        }
-        if(flag)cout<<"Not jolly"<<endl;
+    while(true)
+    {
+        cin >> arrSize;
+        if(cin.eof())
+            break;
+
+        vector<int> arr(arrSize);
+
+        for(int index = 0; index < arrSize; index++)
+            cin >> arr[index];
+
+        if(isJolly(arr))
+            cout << "Jolly" << endl;
         else
-        {
-            cout<<"Jolly"<<endl;
-        }
+            cout << "Not jolly" << endl;
     }
+
     return 0;
 }
-/*
-Sample Input
-4 1 4 2 3
-5 1 4 2 -1 6
 
-Sample Output
-Jolly
-Not jolly
-*/
+bool isJolly(vector<int> & arr)
+{
+    int diff, sizeArr = arr.size();
+    vector<bool> isPresent(sizeArr, false);
 
 
+    for(int index = 1; index < sizeArr; index++)
+    {
+        diff = arr[index] - arr[index - 1];
+        if(diff < 0)
+            diff = -diff;
+
+        if(diff >= sizeArr || diff == 0)
+            return false;
+
+        if(isPresent[diff] == true)
+            return false;
+
+        isPresent[diff] = true;
+    }
+
+    for(int index = 1; index < sizeArr; index++)
+        if(!isPresent[index])
+            return false;
+
+    return true;
+}
